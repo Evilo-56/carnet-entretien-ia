@@ -101,3 +101,115 @@ body.mobile-container {
   text-decoration: none;
   font-weight: 600;
 }
+/* --- Conteneur général type application --- */
+.app-card {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 390px;
+  min-height: 100vh;
+  padding: 40px 24px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 480px) {
+  .app-card {
+    min-height: auto;
+    border-radius: 16px;
+    padding: 32px 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* --- En-tête --- */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.logout-link {
+  font-size: 13px;
+  color: #6b7280;
+  text-decoration: none;
+}
+
+/* --- Carte Véhicule --- */
+.vehicle-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  margin-bottom: 24px;
+}
+
+.vehicle-card {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: border-color 0.2s;
+}
+
+.vehicle-card:hover {
+  border-color: #2563eb;
+}
+
+.vehicle-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.vehicle-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.vehicle-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vehicle-mileage {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* --- Badges --- */
+.badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge-success {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.badge-warning {
+  background-color: #ffedd5;
+  color: #c2410c;
+}
+
+/* --- Groupe de boutons --- */
+.actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
