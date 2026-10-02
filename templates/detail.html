@@ -7,56 +7,33 @@
   <link rel="stylesheet" href="../public/css/style.css">
 </head>
 <body class="mobile-container">
-  <main class="app-card">
+<main class="app-card">
     <!-- Navigation retour -->
     <header class="detail-header">
       <a href="vehicles.html" class="back-link">←</a>
       <div class="header-titles">
-        <h1 class="page-title">Citroën C4 Picasso</h1>
-        <p class="vehicle-subtitle">162 000 km • FG-660-DT</p>
+        <h1 class="page-title" id="vehicleTitle">Chargement…</h1>
+        <p class="vehicle-subtitle" id="vehicleSubtitle">Chargement…</p>
       </div>
     </header>
 
     <!-- Bloc Recommandations IA -->
     <section class="ai-card">
       <h2 class="ai-card-title">Recommandations IA</h2>
-
-      <div class="ai-recommendation">
-        <div class="recommendation-content">
-          <strong class="recommendation-name">Courroie de distribution</strong>
-          <p class="recommendation-sub">Échéance estimée : 180 000 km (dans ~18 000 km)</p>
-        </div>
-        <span class="badge badge-warning">À surveiller</span>
-      </div>
-
-      <hr class="ai-divider">
-
-      <div class="ai-recommendation">
-        <div class="recommendation-content">
-          <strong class="recommendation-name">Vidange & filtre à huile</strong>
-          <p class="recommendation-sub">Échéance estimée : dans 3 000 km</p>
-        </div>
-        <span class="badge badge-success">Prévu</span>
+      <div id="predictionsContainer">
+        <!-- Rempli dynamiquement par JS -->
       </div>
     </section>
 
     <!-- Historique des interventions -->
     <section class="history-section">
       <h2 class="section-title">Historique des opérations</h2>
-
-      <ul class="history-list">
-        <li class="history-item">
-          <span class="history-name">Vidange moteur + filtre</span>
-          <span class="history-meta">12/03/2026 à 150 000 km</span>
-          <span class="history-cost">185,00 €</span>
-        </li>
-        <li class="history-item">
-          <span class="history-name">Disques et plaquettes AV</span>
-          <span class="history-meta">15/09/2025 à 138 000 km</span>
-          <span class="history-cost">320,00 €</span>
-        </li>
+      <ul class="history-list" id="historyList">
+        <!-- Rempli dynamiquement par JS -->
       </ul>
     </section>
   </main>
+
+  <script src="../public/js/app.js"></script>
 </body>
 </html>
