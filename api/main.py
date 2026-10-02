@@ -1,3 +1,5 @@
+import io
+import re
 import sqlite3
 import random
 from datetime import date
@@ -80,9 +82,15 @@ def update_predictions(cursor, vehicle_id: int, current_km: int):
         """, tuple(params))
         last_op = cursor.fetchone()
 
-        last_km = last_op["kilometrage"] if last_op else 0
-        next_km = last_km + rules["intervalle"]
-        remaining_km = next_km - current_km
+        if last_op:
+            last_km = last_op["kilometrage"]
+            next_km = last_km + rules["intervalle"]
+            remaining_km = next_km - current_km
+        else:
+            # Sans facture passée : projection sur le cycle théorique constructeur
+            modulo = current_km % rules["intervalle"]
+            remaining_km = rules["intervalle"] - modulo if modulo != 0 else rules["intervalle"]
+            next_km = current_km + remaining_km
 
         if remaining_km <= rules["seuil_alerte"]:
             statut = "À surveiller"
@@ -113,6 +121,14 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+class VehicleCreate(BaseModel):
+    user_id: int = 1
+    marque: str
+    modele: str
+    motorisation: str
+    immatriculation: str
+    kilometrage_actuel: int
+
 class MaintenanceCreate(BaseModel):
     vehicle_id: int
     type_operation: str
@@ -126,7 +142,6 @@ def read_root():
 
 @app.post("/api/scan-invoice")
 async def scan_invoice(file: UploadFile = File(...)):
-    """Simulation intelligente du scan de facture côté API."""
     await file.read()
 
     conn = get_db_connection()
@@ -186,10 +201,36 @@ def get_vehicles():
         SELECT v.*, 
                (SELECT COUNT(*) FROM predictions p WHERE p.vehicle_id = v.id AND p.statut = 'À surveiller') AS nb_alertes
         FROM vehicles v
+        ORDER BY v.id DESC
     """)
     rows = cursor.fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+@app.post("/api/vehicles", status_code=201)
+def create_vehicle(vehicle: VehicleCreate):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO vehicles (user_id, marque, modele, motorisation, immatriculation, kilometrage_actuel)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        vehicle.user_id,
+        vehicle.marque.strip(),
+        vehicle.modele.strip(),
+        vehicle.motorisation.strip(),
+        vehicle.immatriculation.strip().upper(),
+        vehicle.kilometrage_actuel
+    ))
+    new_vehicle_id = cursor.lastrowid
+
+    update_predictions(cursor, new_vehicle_id, vehicle.kilometrage_actuel)
+
+    conn.commit()
+    conn.close()
+
+    return {"message": "Véhicule créé avec succès", "id": new_vehicle_id}
 
 @app.get("/api/vehicles/{vehicle_id}/dashboard")
 def get_vehicle_dashboard(vehicle_id: int):
@@ -214,7 +255,6 @@ def get_vehicle_dashboard(vehicle_id: int):
     """, (vehicle_id,))
     predictions = [dict(row) for row in cursor.fetchall()]
 
-    # Tri combiné : date la plus récente, puis kilométrage le plus élevé en cas de même date
     cursor.execute("""
         SELECT type_operation, date_operation, kilometrage, montant_ttc 
         FROM maintenances 

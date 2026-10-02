@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Gestion de la connexion (login.html)
+  // 1. Connexion (login.html)
   const loginForm = document.getElementById("loginForm");
   if (loginForm) {
     loginForm.addEventListener("submit", async (event) => {
@@ -16,13 +16,10 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify({ email, password })
         });
 
-        if (!response.ok) {
-          throw new Error("Identifiants incorrects");
-        }
+        if (!response.ok) throw new Error("Identifiants incorrects");
 
         const data = await response.json();
         sessionStorage.setItem("user", JSON.stringify(data.user));
-
         window.location.href = "vehicles.html";
       } catch (err) {
         if (errorEl) {
@@ -33,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 2. Gestion de l'upload et appel du service OCR backend (add-maintenance.html)
+  // 2. Scan OCR & Ajout d'entretien (add-maintenance.html)
   const invoiceFileInput = document.getElementById("invoiceFile");
   const maintenanceForm = document.getElementById("maintenanceForm");
 
@@ -55,14 +52,11 @@ document.addEventListener("DOMContentLoaded", () => {
           body: formData
         });
 
-        if (!response.ok) {
-          throw new Error("Erreur de numérisation");
-        }
+        if (!response.ok) throw new Error("Erreur scan");
 
         const result = await response.json();
         const extracted = result.data;
 
-        // Pré-remplissage automatique des champs à partir de la réponse OCR
         document.getElementById("date_intervention").value = extracted.date_operation;
         document.getElementById("kilometrage").value = extracted.kilometrage;
         document.getElementById("type_operation").value = extracted.type_operation;
@@ -71,21 +65,22 @@ document.addEventListener("DOMContentLoaded", () => {
         if (label) label.textContent = "✓ Facture numérisée avec succès";
       } catch (error) {
         console.error("Erreur OCR :", error);
-        if (label) label.textContent = "Erreur lors de l'analyse. Saisie manuelle possible.";
+        if (label) label.textContent = "Erreur lors de l'analyse.";
       }
     });
   }
 
-  // 3. Enregistrement de l'entretien
   if (maintenanceForm) {
     maintenanceForm.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       const rawMontant = document.getElementById("montant_ttc").value.toString().replace(",", ".");
       const montantFinal = parseFloat(rawMontant) || 0.0;
+      const urlParams = new URLSearchParams(window.location.search);
+      const vehicleId = parseInt(urlParams.get("id") || "1", 10);
 
       const payload = {
-        vehicle_id: 1,
+        vehicle_id: vehicleId,
         date_operation: document.getElementById("date_intervention").value,
         kilometrage: parseInt(document.getElementById("kilometrage").value, 10),
         type_operation: document.getElementById("type_operation").value,
@@ -99,11 +94,9 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify(payload)
         });
 
-        if (!response.ok) {
-          throw new Error("Erreur lors de l'enregistrement");
-        }
+        if (!response.ok) throw new Error("Erreur enregistrement");
 
-        window.location.href = "detail.html";
+        window.location.href = `detail.html?id=${vehicleId}`;
       } catch (error) {
         console.error("Erreur :", error);
         alert("Impossible d'enregistrer l'opération.");
@@ -111,10 +104,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 4. Chargement de la liste des véhicules (vehicles.html)
+  // 3. Ajout d'un véhicule (add-vehicle.html)
+  const vehicleForm = document.getElementById("vehicleForm");
+  if (vehicleForm) {
+    vehicleForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const payload = {
+        user_id: 1,
+        marque: document.getElementById("vehicleMarque").value,
+        modele: document.getElementById("vehicleModele").value,
+        motorisation: document.getElementById("vehicleMotorisation").value,
+        immatriculation: document.getElementById("vehicleImmat").value,
+        kilometrage_actuel: parseInt(document.getElementById("vehicleKm").value, 10)
+      };
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/api/vehicles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error("Erreur lors de la création du véhicule");
+
+        const result = await response.json();
+        window.location.href = `detail.html?id=${result.id}`;
+      } catch (error) {
+        console.error("Erreur :", error);
+        alert("Impossible d'ajouter le véhicule.");
+      }
+    });
+  }
+
+  // 4. Liste des véhicules (vehicles.html)
   loadVehiclesList();
 
-  // 5. Chargement du tableau de bord véhicule (detail.html)
+  // 5. Tableau de bord véhicule (detail.html)
   const urlParams = new URLSearchParams(window.location.search);
   const vehicleId = urlParams.get("id") || 1;
   loadVehicleDashboard(vehicleId);
@@ -135,7 +161,7 @@ async function loadVehiclesList() {
       const badgeText = v.nb_alertes > 0 ? `${v.nb_alertes} à surveiller` : "À jour";
 
       return `
-        <div class="vehicle-item-card" onclick="window.location.href='detail.html?id=${v.id}'" style="cursor: pointer;">
+        <div class="vehicle-item-card" onclick="window.location.href='detail.html?id=${v.id}'" style="cursor: pointer; margin-bottom: 12px;">
           <div class="vehicle-info">
             <strong class="vehicle-title">${v.marque} ${v.modele}</strong>
             <p class="vehicle-meta">${v.kilometrage_actuel.toLocaleString("fr-FR")} km • ${v.immatriculation}</p>
@@ -178,18 +204,22 @@ async function loadVehicleDashboard(vehicleId = 1) {
       ${index < data.predictions.length - 1 ? '<hr class="ai-divider">' : ''}
     `).join("");
 
-    historyList.innerHTML = data.maintenances.map(m => {
-      const dateFr = new Date(m.date_operation).toLocaleDateString("fr-FR");
-      const montantFr = Number(m.montant_ttc).toLocaleString("fr-FR", { minimumFractionDigits: 2 });
-      
-      return `
-        <li class="history-item">
-          <span class="history-name">${m.type_operation}</span>
-          <span class="history-meta">${dateFr} à ${m.kilometrage.toLocaleString("fr-FR")} km</span>
-          <span class="history-cost">${montantFr} €</span>
-        </li>
-      `;
-    }).join("");
+    if (data.maintenances.length === 0) {
+      historyList.innerHTML = `<li class="history-item"><span class="history-meta">Aucune intervention enregistrée pour ce véhicule.</span></li>`;
+    } else {
+      historyList.innerHTML = data.maintenances.map(m => {
+        const dateFr = new Date(m.date_operation).toLocaleDateString("fr-FR");
+        const montantFr = Number(m.montant_ttc).toLocaleString("fr-FR", { minimumFractionDigits: 2 });
+        
+        return `
+          <li class="history-item">
+            <span class="history-name">${m.type_operation}</span>
+            <span class="history-meta">${dateFr} à ${m.kilometrage.toLocaleString("fr-FR")} km</span>
+            <span class="history-cost">${montantFr} €</span>
+          </li>
+        `;
+      }).join("");
+    }
 
   } catch (error) {
     console.error("Erreur lors de l'appel API :", error);

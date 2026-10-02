@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoCarnet AI - Ajouter un véhicule</title>
+  <link rel="stylesheet" href="../public/css/style.css">
+</head>
+<body class="mobile-container">
+  <main class="app-card">
+    <header class="detail-header">
+      <a href="vehicles.html" class="back-link">←</a>
+      <h1 class="page-title">Nouveau véhicule</h1>
+    </header>
+
+    <form class="maintenance-form" id="vehicleForm">
+      <div class="form-field">
+        <label for="vehicleMarque">Marque</label>
+        <input type="text" id="vehicleMarque" placeholder="Ex: Renault, Peugeot…" required>
+      </div>
+
+      <div class="form-field">
+        <label for="vehicleModele">Modèle</label>
+        <input type="text" id="vehicleModele" placeholder="Ex: Clio 4, 308…" required>
+      </div>
+
+      <div class="form-field">
+        <label for="vehicleMotorisation">Motorisation</label>
+        <input type="text" id="vehicleMotorisation" placeholder="Ex: 1.5 dCi, 1.2 PureTech…" required>
+      </div>
+
+      <div class="form-field">
+        <label for="vehicleImmat">Immatriculation</label>
+        <input type="text" id="vehicleImmat" placeholder="Ex: AB-123-CD" required>
+      </div>
+
+      <div class="form-field">
+        <label for="vehicleKm">Kilométrage actuel (km)</label>
+        <input type="number" id="vehicleKm" placeholder="Ex: 85000" min="0" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-submit">Enregistrer le véhicule</button>
+    </form>
+  </main>
+
+  <script src="../public/js/app.js"></script>
+</body>
+</html>
