@@ -1,5 +1,7 @@
 import sqlite3
-from fastapi import FastAPI, HTTPException
+import random
+from datetime import date
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -18,7 +20,6 @@ app.add_middleware(
 
 DATABASE_NAME = "carnet_entretien.db"
 
-# Règles constructeur avec mots-clés tolérants aux variations de libellé
 MAINTENANCE_INTERVALS = {
     "Vidange & filtre à huile": {
         "keywords": ["vidange"],
@@ -37,15 +38,36 @@ MAINTENANCE_INTERVALS = {
     },
 }
 
+MOCK_INVOICE_TEMPLATES = [
+    {
+        "type_operation": "Vidange moteur + filtre",
+        "montant_ttc": 195.50,
+        "km_delta": 3000
+    },
+    {
+        "type_operation": "Disques et plaquettes AV",
+        "montant_ttc": 340.00,
+        "km_delta": 4500
+    },
+    {
+        "type_operation": "Courroie de distribution",
+        "montant_ttc": 680.00,
+        "km_delta": 5000
+    },
+    {
+        "type_operation": "Purge liquide de frein",
+        "montant_ttc": 85.00,
+        "km_delta": 1500
+    }
+]
+
 def get_db_connection():
     conn = sqlite3.connect(DATABASE_NAME)
     conn.row_factory = sqlite3.Row
     return conn
 
 def update_predictions(cursor, vehicle_id: int, current_km: int):
-    """Recalcule les prédictions en retrouvant le dernier entretien par mot-clé."""
     for operation, rules in MAINTENANCE_INTERVALS.items():
-        # Correspondance SQL insensible à la casse sur chacun des mots-clés
         where_clause = " OR ".join(["LOWER(type_operation) LIKE ?" for _ in rules["keywords"]])
         params = [vehicle_id] + [f"%{kw.lower()}%" for kw in rules["keywords"]]
 
@@ -87,7 +109,6 @@ def update_predictions(cursor, vehicle_id: int, current_km: int):
                 VALUES (?, ?, ?, ?, ?)
             """, (vehicle_id, operation, next_km, texte, statut))
 
-# Modèles Pydantic pour la validation
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -102,6 +123,39 @@ class MaintenanceCreate(BaseModel):
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "API AutoCarnet AI opérationnelle"}
+
+@app.post("/api/scan-invoice")
+async def scan_invoice(file: UploadFile = File(...)):
+    """Simulation intelligente du scan de facture côté API."""
+    await file.read()
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT kilometrage_actuel FROM vehicles WHERE id = 1")
+    row = cursor.fetchone()
+    current_km = row["kilometrage_actuel"] if row else 162000
+    conn.close()
+
+    filename_lower = file.filename.lower()
+    if "vidange" in filename_lower:
+        template = MOCK_INVOICE_TEMPLATES[0]
+    elif "frein" in filename_lower or "plaquette" in filename_lower:
+        template = MOCK_INVOICE_TEMPLATES[1]
+    elif "distribution" in filename_lower or "courroie" in filename_lower:
+        template = MOCK_INVOICE_TEMPLATES[2]
+    else:
+        template = random.choice(MOCK_INVOICE_TEMPLATES)
+
+    return {
+        "status": "success",
+        "filename": file.filename,
+        "data": {
+            "date_operation": date.today().strftime("%Y-%m-%d"),
+            "kilometrage": current_km + template["km_delta"],
+            "type_operation": template["type_operation"],
+            "montant_ttc": template["montant_ttc"]
+        }
+    }
 
 @app.post("/api/login")
 def login(credentials: LoginRequest):
@@ -149,7 +203,6 @@ def get_vehicle_dashboard(vehicle_id: int):
         conn.close()
         raise HTTPException(status_code=404, detail="Véhicule introuvable")
 
-    # Recalcul automatique des prédictions
     update_predictions(cursor, vehicle_id, vehicle["kilometrage_actuel"])
     conn.commit()
 
@@ -161,11 +214,12 @@ def get_vehicle_dashboard(vehicle_id: int):
     """, (vehicle_id,))
     predictions = [dict(row) for row in cursor.fetchall()]
 
+    # Tri combiné : date la plus récente, puis kilométrage le plus élevé en cas de même date
     cursor.execute("""
         SELECT type_operation, date_operation, kilometrage, montant_ttc 
         FROM maintenances 
         WHERE vehicle_id = ? 
-        ORDER BY date_operation DESC
+        ORDER BY date_operation DESC, kilometrage DESC
     """, (vehicle_id,))
     maintenances = [dict(row) for row in cursor.fetchall()]
 
@@ -193,7 +247,6 @@ def create_maintenance(maintenance: MaintenanceCreate):
         maintenance.montant_ttc
     ))
 
-    # Mise à jour du compteur kilométrique
     cursor.execute("""
         UPDATE vehicles 
         SET kilometrage_actuel = MAX(kilometrage_actuel, ?) 
@@ -203,7 +256,6 @@ def create_maintenance(maintenance: MaintenanceCreate):
     cursor.execute("SELECT kilometrage_actuel FROM vehicles WHERE id = ?", (maintenance.vehicle_id,))
     updated_km = cursor.fetchone()["kilometrage_actuel"]
 
-    # Recalcul immédiat des échéances
     update_predictions(cursor, maintenance.vehicle_id, updated_km)
 
     conn.commit()

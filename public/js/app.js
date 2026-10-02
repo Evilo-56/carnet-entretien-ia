@@ -33,29 +33,50 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 2. Gestion de l'ajout d'entretien et simulation OCR (add-maintenance.html)
+  // 2. Gestion de l'upload et appel du service OCR backend (add-maintenance.html)
   const invoiceFileInput = document.getElementById("invoiceFile");
   const maintenanceForm = document.getElementById("maintenanceForm");
 
   if (invoiceFileInput) {
-    invoiceFileInput.addEventListener("change", (event) => {
+    invoiceFileInput.addEventListener("change", async (event) => {
       const file = event.target.files[0];
       if (!file) return;
 
       const dropzone = document.querySelector(".ocr-dropzone");
-      dropzone.querySelector(".ocr-label").textContent = "Analyse de la facture par l'IA en cours…";
+      const label = dropzone ? dropzone.querySelector(".ocr-label") : null;
+      if (label) label.textContent = "Analyse OCR en cours sur le serveur…";
 
-      setTimeout(() => {
-        document.getElementById("date_intervention").value = "2026-10-02";
-        document.getElementById("kilometrage").value = 162000;
-        document.getElementById("type_operation").value = "Courroie de distribution";
-        document.getElementById("montant_ttc").value = "650.00";
+      const formData = new FormData();
+      formData.append("file", file);
 
-        dropzone.querySelector(".ocr-label").textContent = "✓ Facture analysée avec succès";
-      }, 900);
+      try {
+        const response = await fetch("http://127.0.0.1:8000/api/scan-invoice", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error("Erreur de numérisation");
+        }
+
+        const result = await response.json();
+        const extracted = result.data;
+
+        // Pré-remplissage automatique des champs à partir de la réponse OCR
+        document.getElementById("date_intervention").value = extracted.date_operation;
+        document.getElementById("kilometrage").value = extracted.kilometrage;
+        document.getElementById("type_operation").value = extracted.type_operation;
+        document.getElementById("montant_ttc").value = extracted.montant_ttc.toFixed(2);
+
+        if (label) label.textContent = "✓ Facture numérisée avec succès";
+      } catch (error) {
+        console.error("Erreur OCR :", error);
+        if (label) label.textContent = "Erreur lors de l'analyse. Saisie manuelle possible.";
+      }
     });
   }
 
+  // 3. Enregistrement de l'entretien
   if (maintenanceForm) {
     maintenanceForm.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -90,10 +111,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 3. Chargement de la liste des véhicules (vehicles.html)
+  // 4. Chargement de la liste des véhicules (vehicles.html)
   loadVehiclesList();
 
-  // 4. Chargement du détail du véhicule (detail.html)
+  // 5. Chargement du tableau de bord véhicule (detail.html)
   const urlParams = new URLSearchParams(window.location.search);
   const vehicleId = urlParams.get("id") || 1;
   loadVehicleDashboard(vehicleId);
