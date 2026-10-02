@@ -8,45 +8,46 @@
 </head>
 <body class="mobile-container">
   <main class="app-card">
-    <!-- En-tête avec retour -->
+    <!-- En-tête avec bouton retour -->
     <header class="detail-header">
-      <a href="detail.html" class="back-link">←</a>
+      <a href="javascript:history.back()" class="back-link">←</a>
       <h1 class="page-title">Nouvel entretien</h1>
     </header>
 
-    <!-- Zone d'action OCR / Caméra -->
+    <!-- Zone de scan OCR cliquable -->
     <label for="invoiceFile" class="ocr-dropzone">
-      <span class="ocr-icon">📷</span>
-      <strong class="ocr-label">Scanner une facture</strong>
-      <span class="ocr-sub">L'IA extrait automatiquement les données</span>
-      <input type="file" id="invoiceFile" accept="image/*" capture="environment" hidden>
+      <input type="file" id="invoiceFile" accept="image/*" style="display: none;">
+      <div class="ocr-icon">📄</div>
+      <strong class="ocr-title">Scanner une facture</strong>
+      <span class="ocr-label">L'IA extrait automatiquement les données</span>
     </label>
 
-    <!-- Formulaire d'entretien -->
+    <!-- Formulaire d'enregistrement -->
     <form class="maintenance-form" id="maintenanceForm">
       <div class="form-field">
         <label for="date_intervention">Date de l'opération</label>
-        <input type="date" id="date_intervention" value="2026-10-02" required>
+        <input type="date" id="date_intervention" required>
       </div>
 
       <div class="form-field">
-        <label for="kilometrage">Kilométrage</label>
-        <input type="number" id="kilometrage" placeholder="ex. : 162 000" value="162000" required>
+        <label for="kilometrage">Kilométrage (km)</label>
+        <input type="number" id="kilometrage" placeholder="Ex: 162000" min="0" required>
       </div>
 
       <div class="form-field">
         <label for="type_operation">Type d'intervention</label>
-        <input type="text" id="type_operation" placeholder="ex. : Courroie de distribution" value="Courroie de distribution" required>
+        <input type="text" id="type_operation" placeholder="Ex: Vidange moteur + filtre" required>
       </div>
 
       <div class="form-field">
         <label for="montant_ttc">Montant TTC (€)</label>
-        <input type="number" step="0.01" id="montant_ttc" placeholder="ex. : 650.00" value="650.00" required>
+        <input type="number" step="0.01" id="montant_ttc" placeholder="Ex: 185.00" min="0" required>
       </div>
 
       <button type="submit" class="btn btn-primary btn-submit">Enregistrer l'entretien</button>
     </form>
   </main>
+
   <script src="../public/js/app.js"></script>
 </body>
 </html>

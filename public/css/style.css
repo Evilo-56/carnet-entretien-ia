@@ -56,13 +56,22 @@ body {
 }
 
 .back-link {
-  font-size: 22px;
+  font-size: 20px;
   text-decoration: none;
   color: #334155;
-  padding: 4px 8px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
+  line-height: 1;
+}
+
+.back-link:hover {
+  background: #e2e8f0;
 }
 
 /* Boutons */
@@ -338,6 +347,7 @@ body {
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
+  width: 100%;
 }
 
 .form-field input:focus,
@@ -346,18 +356,40 @@ body {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
+/* Zone OCR sans chevauchement */
 .ocr-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   border: 2px dashed #93c5fd;
-  background: #eff6ff;
-  border-radius: 12px;
-  padding: 20px;
+  background-color: #eff6ff;
+  border-radius: 14px;
+  padding: 20px 16px;
   text-align: center;
   cursor: pointer;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
+  transition: all 0.2s ease;
+}
+
+.ocr-dropzone:hover {
+  background-color: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.ocr-icon {
+  font-size: 26px;
+  margin-bottom: 6px;
+}
+
+.ocr-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1d4ed8;
+  margin-bottom: 4px;
 }
 
 .ocr-label {
-  font-size: 14px;
-  color: #1d4ed8;
-  font-weight: 600;
+  font-size: 12px;
+  color: #64748b;
 }
