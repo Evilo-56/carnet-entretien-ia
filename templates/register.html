@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoCarnet AI - Inscription</title>
+  <link rel="stylesheet" href="../public/css/style.css">
+</head>
+<body class="mobile-container">
+  <main class="app-card">
+    <header class="login-header">
+      <h1 class="app-brand">AutoCarnet <span class="brand-ai">AI</span></h1>
+      <p class="login-subtitle">Créer un nouveau compte</p>
+    </header>
+
+    <form class="maintenance-form" id="registerForm">
+      <div class="form-field">
+        <label for="regEmail">Adresse email</label>
+        <input type="email" id="regEmail" placeholder="votre.email@exemple.fr" required>
+      </div>
+
+      <div class="form-field">
+        <label for="regPassword">Mot de passe</label>
+        <input type="password" id="regPassword" placeholder="••••••••" required minlength="4">
+      </div>
+
+      <div id="registerError" style="display: none; color: #ef4444; font-size: 13px; text-align: center; font-weight: 600;"></div>
+
+      <button type="submit" class="btn btn-primary btn-submit">Créer mon compte</button>
+    </form>
+
+    <p style="text-align: center; margin-top: 20px; font-size: 13px; color: #64748b;">
+      Déjà un compte ? 
+      <a href="login.html" style="color: #2563eb; font-weight: 700; text-decoration: none;">Se connecter</a>
+    </p>
+  </main>
+
+  <script src="../public/js/app.js"></script>
+</body>
+</html>

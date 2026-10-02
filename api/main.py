@@ -70,7 +70,6 @@ def update_predictions(cursor, vehicle_id: int, current_km: int):
             next_km = last_km + rules["intervalle"]
             remaining_km = next_km - current_km
         else:
-            # Cycle theorique si aucun historique en base
             modulo = current_km % rules["intervalle"]
             remaining_km = rules["intervalle"] - modulo if modulo != 0 else rules["intervalle"]
             next_km = current_km + remaining_km
@@ -100,7 +99,7 @@ def update_predictions(cursor, vehicle_id: int, current_km: int):
                 VALUES (?, ?, ?, ?, ?)
             """, (vehicle_id, operation, next_km, texte, statut))
 
-class LoginRequest(BaseModel):
+class AuthRequest(BaseModel):
     email: str
     password: str
 
@@ -123,47 +122,44 @@ class MaintenanceCreate(BaseModel):
 def root():
     return {"status": "ok"}
 
-@app.post("/api/scan-invoice")
-async def scan_invoice(file: UploadFile = File(...)):
-    await file.read()
+@app.post("/api/register", status_code=201)
+def register(credentials: AuthRequest):
+    email = credentials.email.strip().lower()
+    password = credentials.password.strip()
+
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Tous les champs sont requis")
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT kilometrage_actuel FROM vehicles WHERE id = 1")
-    row = cursor.fetchone()
-    current_km = row["kilometrage_actuel"] if row else 162000
+
+    cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+    if cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=400, detail="Cet email est déjà enregistré")
+
+    cursor.execute("""
+        INSERT INTO users (email, password_hash)
+        VALUES (?, ?)
+    """, (email, password))
+    new_user_id = cursor.lastrowid
+    conn.commit()
     conn.close()
 
-    filename = file.filename.lower()
-    if "vidange" in filename:
-        template = MOCK_INVOICE_TEMPLATES[0]
-    elif "frein" in filename or "plaquette" in filename:
-        template = MOCK_INVOICE_TEMPLATES[1]
-    elif "distribution" in filename or "courroie" in filename:
-        template = MOCK_INVOICE_TEMPLATES[2]
-    else:
-        template = random.choice(MOCK_INVOICE_TEMPLATES)
-
     return {
-        "status": "success",
-        "filename": file.filename,
-        "data": {
-            "date_operation": date.today().strftime("%Y-%m-%d"),
-            "kilometrage": current_km + template["km_delta"],
-            "type_operation": template["type_operation"],
-            "montant_ttc": template["montant_ttc"]
-        }
+        "message": "Compte créé",
+        "user": {"id": new_user_id, "email": email}
     }
 
 @app.post("/api/login")
-def login(credentials: LoginRequest):
+def login(credentials: AuthRequest):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
         SELECT id, email 
         FROM users 
         WHERE email = ? AND password_hash = ?
-    """, (credentials.email, credentials.password))
+    """, (credentials.email.strip().lower(), credentials.password.strip()))
     user = cursor.fetchone()
     conn.close()
 
@@ -305,3 +301,35 @@ def delete_maintenance(maintenance_id: int):
     conn.commit()
     conn.close()
     return {"message": "Supprimé"}
+
+@app.post("/api/scan-invoice")
+async def scan_invoice(file: UploadFile = File(...)):
+    await file.read()
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT kilometrage_actuel FROM vehicles WHERE id = 1")
+    row = cursor.fetchone()
+    current_km = row["kilometrage_actuel"] if row else 162000
+    conn.close()
+
+    filename = file.filename.lower()
+    if "vidange" in filename:
+        template = MOCK_INVOICE_TEMPLATES[0]
+    elif "frein" in filename or "plaquette" in filename:
+        template = MOCK_INVOICE_TEMPLATES[1]
+    elif "distribution" in filename or "courroie" in filename:
+        template = MOCK_INVOICE_TEMPLATES[2]
+    else:
+        template = random.choice(MOCK_INVOICE_TEMPLATES)
+
+    return {
+        "status": "success",
+        "filename": file.filename,
+        "data": {
+            "date_operation": date.today().strftime("%Y-%m-%d"),
+            "kilometrage": current_km + template["km_delta"],
+            "type_operation": template["type_operation"],
+            "montant_ttc": template["montant_ttc"]
+        }
+    }

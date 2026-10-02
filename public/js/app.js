@@ -1,11 +1,11 @@
 // Auth guard
 (function() {
   const user = sessionStorage.getItem("user");
-  const isLoginPage = window.location.pathname.includes("login.html");
+  const isAuthPage = window.location.pathname.includes("login.html") || window.location.pathname.includes("register.html");
 
-  if (!user && !isLoginPage) {
+  if (!user && !isAuthPage) {
     window.location.href = "login.html";
-  } else if (user && isLoginPage) {
+  } else if (user && isAuthPage) {
     window.location.href = "vehicles.html";
   }
 })();
@@ -50,6 +50,39 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch {
         if (errorEl) {
           errorEl.textContent = "Identifiants invalides.";
+          errorEl.style.display = "block";
+        }
+      }
+    });
+  }
+
+  // Inscription
+  const registerForm = document.getElementById("registerForm");
+  if (registerForm) {
+    registerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("regEmail").value;
+      const password = document.getElementById("regPassword").value;
+      const errorEl = document.getElementById("registerError");
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || "Erreur inscription");
+        }
+
+        // Connexion automatique après inscription
+        sessionStorage.setItem("user", JSON.stringify(data.user));
+        window.location.href = "vehicles.html";
+      } catch (err) {
+        if (errorEl) {
+          errorEl.textContent = err.message || "Erreur lors de l'inscription.";
           errorEl.style.display = "block";
         }
       }
