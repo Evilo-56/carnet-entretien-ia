@@ -25,10 +25,36 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (maintenanceForm) {
-    maintenanceForm.addEventListener("submit", (event) => {
+    maintenanceForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      // Redirection vers la page détail du véhicule après validation
-      window.location.href = "detail.html";
+
+      const payload = {
+        vehicle_id: 1,
+        date_operation: document.getElementById("date_intervention").value,
+        kilometrage: parseInt(document.getElementById("kilometrage").value, 10),
+        type_operation: document.getElementById("type_operation").value,
+        montant_ttc: parseFloat(document.getElementById("montant_ttc").value)
+      };
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/api/maintenances", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error("Erreur lors de l'enregistrement de l'entretien");
+        }
+
+        // Redirection vers le détail une fois l'enregistrement validé
+        window.location.href = "detail.html";
+      } catch (error) {
+        console.error("Erreur :", error);
+        alert("Impossible d'enregistrer l'opération.");
+      }
     });
   }
 });
