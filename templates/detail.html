@@ -7,30 +7,28 @@
   <link rel="stylesheet" href="../public/css/style.css">
 </head>
 <body class="mobile-container">
-<main class="app-card">
-    <!-- Navigation retour -->
-    <header class="detail-header">
-      <a href="vehicles.html" class="back-link">←</a>
-      <div class="header-titles">
-        <h1 class="page-title" id="vehicleTitle">Chargement…</h1>
-        <p class="vehicle-subtitle" id="vehicleSubtitle">Chargement…</p>
+  <main class="app-card">
+    <header class="detail-header" style="justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="vehicles.html" class="back-link">←</a>
+        <div class="header-titles">
+          <h1 class="page-title" id="vehicleTitle">Chargement…</h1>
+          <p class="vehicle-subtitle" id="vehicleSubtitle">Chargement…</p>
+        </div>
       </div>
+      <a id="btnAddMaintenance" href="add-maintenance.html" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px; text-decoration: none;">+ Entretien</a>
     </header>
 
     <!-- Bloc Recommandations IA -->
-    <section class="ai-card">
+    <section class="ai-card" style="margin-top: 16px;">
       <h2 class="ai-card-title">Recommandations IA</h2>
-      <div id="predictionsContainer">
-        <!-- Rempli dynamiquement par JS -->
-      </div>
+      <div id="predictionsContainer"></div>
     </section>
 
     <!-- Historique des interventions -->
     <section class="history-section">
       <h2 class="section-title">Historique des opérations</h2>
-      <ul class="history-list" id="historyList">
-        <!-- Rempli dynamiquement par JS -->
-      </ul>
+      <ul class="history-list" id="historyList"></ul>
     </section>
   </main>
 

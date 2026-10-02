@@ -8,12 +8,29 @@
 </head>
 <body class="mobile-container">
   <main class="app-card">
-    <header class="detail-header" style="justify-content: space-between; align-items: center;">
-      <h1 class="page-title" style="margin: 0;">Mes véhicules</h1>
-      <a href="add-vehicle.html" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px; text-decoration: none;">+ Ajouter</a>
+    <!-- En-tête bien dimensionné : titre à gauche, bouton quitter à droite -->
+    <header class="vehicles-header">
+      <div>
+        <h1 class="page-title">Mes véhicules</h1>
+        <p class="header-subtitle">Gestion de votre flotte</p>
+      </div>
+      <button id="btnLogout" type="button" class="btn-logout" title="Se déconnecter">
+        <span>Quitter</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </button>
     </header>
 
-    <div class="vehicles-list" id="vehiclesList" style="margin-top: 16px;">
+    <!-- Bouton d'ajout pleine largeur : ergonomique et moderne -->
+    <a href="add-vehicle.html" class="btn btn-primary btn-add-vehicle">
+      + Ajouter un véhicule
+    </a>
+
+    <!-- Liste dynamique des cartes véhicules -->
+    <div class="vehicles-list" id="vehiclesList">
       <p class="history-meta">Chargement des véhicules…</p>
     </div>
   </main>

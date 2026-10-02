@@ -30,7 +30,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 2. Scan OCR & Ajout d'entretien (add-maintenance.html)
+  // 2. Déconnexion
+  const btnLogout = document.getElementById("btnLogout");
+  if (btnLogout) {
+    btnLogout.addEventListener("click", () => {
+      sessionStorage.removeItem("user");
+      window.location.href = "login.html";
+    });
+  }
+
+  // 3. Scan OCR & Ajout d'entretien (add-maintenance.html)
   const invoiceFileInput = document.getElementById("invoiceFile");
   const maintenanceForm = document.getElementById("maintenanceForm");
 
@@ -104,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 3. Ajout d'un véhicule (add-vehicle.html)
+  // 4. Ajout d'un véhicule (add-vehicle.html)
   const vehicleForm = document.getElementById("vehicleForm");
   if (vehicleForm) {
     vehicleForm.addEventListener("submit", async (event) => {
@@ -137,12 +146,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 4. Liste des véhicules (vehicles.html)
+  // 5. Liste des véhicules (vehicles.html)
   loadVehiclesList();
 
-  // 5. Tableau de bord véhicule (detail.html)
+  // 6. Tableau de bord véhicule (detail.html)
   const urlParams = new URLSearchParams(window.location.search);
   const vehicleId = urlParams.get("id") || 1;
+  
+  const btnAddMaintenance = document.getElementById("btnAddMaintenance");
+  if (btnAddMaintenance) {
+    btnAddMaintenance.href = `add-maintenance.html?id=${vehicleId}`;
+  }
+
   loadVehicleDashboard(vehicleId);
 });
 
@@ -161,12 +176,17 @@ async function loadVehiclesList() {
       const badgeText = v.nb_alertes > 0 ? `${v.nb_alertes} à surveiller` : "À jour";
 
       return `
-        <div class="vehicle-item-card" onclick="window.location.href='detail.html?id=${v.id}'" style="cursor: pointer; margin-bottom: 12px;">
-          <div class="vehicle-info">
-            <strong class="vehicle-title">${v.marque} ${v.modele}</strong>
-            <p class="vehicle-meta">${v.kilometrage_actuel.toLocaleString("fr-FR")} km • ${v.immatriculation}</p>
+        <div class="vehicle-card" onclick="window.location.href='detail.html?id=${v.id}'">
+          <div class="vehicle-card-content">
+            <div class="vehicle-details">
+              <strong class="vehicle-title">${v.marque} ${v.modele}</strong>
+              <p class="vehicle-meta">${v.kilometrage_actuel.toLocaleString("fr-FR")} km • ${v.immatriculation}</p>
+            </div>
+            <div class="vehicle-status">
+              <span class="badge ${badgeClass}">${badgeText}</span>
+              <span class="chevron">›</span>
+            </div>
           </div>
-          <span class="badge ${badgeClass}">${badgeText}</span>
         </div>
       `;
     }).join("");
@@ -195,10 +215,8 @@ async function loadVehicleDashboard(vehicleId = 1) {
 
     predictionsContainer.innerHTML = data.predictions.map((p, index) => `
       <div class="ai-recommendation">
-        <div class="recommendation-content">
-          <strong class="recommendation-name">${p.type_operation}</strong>
-          <p class="recommendation-sub">Échéance estimée : ${p.echeance_texte}</p>
-        </div>
+        <strong class="recommendation-name">${p.type_operation}</strong>
+        <p class="recommendation-sub">Échéance estimée : ${p.echeance_texte}</p>
         <span class="badge ${p.statut === 'Prévu' ? 'badge-success' : 'badge-warning'}">${p.statut}</span>
       </div>
       ${index < data.predictions.length - 1 ? '<hr class="ai-divider">' : ''}
