@@ -1,3 +1,23 @@
+// ----------------------------------------------------
+// 0. Guard d'authentification (Vérification de session)
+// ----------------------------------------------------
+(function checkAuthGuard() {
+  const currentUser = sessionStorage.getItem("user");
+  const isLoginPage = window.location.pathname.includes("login.html");
+
+  // Si non connecté et pas sur la page de login -> redirection vers login
+  if (!currentUser && !isLoginPage) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  // Si déjà connecté et sur la page de login -> redirection vers la liste des véhicules
+  if (currentUser && isLoginPage) {
+    window.location.href = "vehicles.html";
+    return;
+  }
+})();
+
 document.addEventListener("DOMContentLoaded", () => {
   // 1. Connexion (login.html)
   const loginForm = document.getElementById("loginForm");
