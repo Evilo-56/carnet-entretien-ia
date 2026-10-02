@@ -213,3 +213,106 @@ body.mobile-container {
   flex-direction: column;
   gap: 12px;
 }
+/* --- Navigation retour & en-tête détail --- */
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.back-link {
+  font-size: 24px;
+  text-decoration: none;
+  color: #111827;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.header-titles .page-title {
+  font-size: 20px;
+}
+
+/* --- Carte IA --- */
+.ai-card {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 28px;
+}
+
+.ai-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2563eb;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.ai-recommendation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.recommendation-name {
+  font-size: 14px;
+  color: #111827;
+}
+
+.recommendation-sub {
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.ai-divider {
+  border: none;
+  border-top: 1px solid #dbeafe;
+  margin: 14px 0;
+}
+
+/* --- Historique --- */
+.section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 14px;
+}
+
+.history-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-item {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.history-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.history-meta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.history-cost {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 4px;
+}
