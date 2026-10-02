@@ -5,13 +5,11 @@
   const currentUser = sessionStorage.getItem("user");
   const isLoginPage = window.location.pathname.includes("login.html");
 
-  // Si non connecté et pas sur la page de login -> redirection vers login
   if (!currentUser && !isLoginPage) {
     window.location.href = "login.html";
     return;
   }
 
-  // Si déjà connecté et sur la page de login -> redirection vers la liste des véhicules
   if (currentUser && isLoginPage) {
     window.location.href = "vehicles.html";
     return;
@@ -221,6 +219,8 @@ async function loadVehicleDashboard(vehicleId = 1) {
   const subtitleEl = document.getElementById("vehicleSubtitle");
   const predictionsContainer = document.getElementById("predictionsContainer");
   const historyList = document.getElementById("historyList");
+  const statBudgetEl = document.getElementById("statBudget");
+  const statCountEl = document.getElementById("statCount");
 
   if (!titleEl || !predictionsContainer || !historyList) return;
 
@@ -232,6 +232,15 @@ async function loadVehicleDashboard(vehicleId = 1) {
 
     titleEl.textContent = `${data.vehicle.marque} ${data.vehicle.modele}`;
     subtitleEl.textContent = `${data.vehicle.kilometrage_actuel.toLocaleString("fr-FR")} km • ${data.vehicle.immatriculation}`;
+
+    // Calcul et affichage des indicateurs de synthèse (KPIs)
+    const totalDepenses = data.maintenances.reduce((acc, m) => acc + (parseFloat(m.montant_ttc) || 0), 0);
+    if (statBudgetEl) {
+      statBudgetEl.textContent = totalDepenses.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+    }
+    if (statCountEl) {
+      statCountEl.textContent = data.maintenances.length;
+    }
 
     predictionsContainer.innerHTML = data.predictions.map((p, index) => `
       <div class="ai-recommendation">

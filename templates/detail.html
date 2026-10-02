@@ -8,6 +8,7 @@
 </head>
 <body class="mobile-container">
   <main class="app-card">
+    <!-- En-tête -->
     <header class="detail-header" style="justify-content: space-between; align-items: center;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <a href="vehicles.html" class="back-link">←</a>
@@ -19,8 +20,20 @@
       <a id="btnAddMaintenance" href="add-maintenance.html" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px; text-decoration: none;">+ Entretien</a>
     </header>
 
+    <!-- Bandeau des indicateurs clés (KPIs) -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Budget total</span>
+        <strong class="stat-value" id="statBudget">0,00 €</strong>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Entretiens</span>
+        <strong class="stat-value" id="statCount">0</strong>
+      </div>
+    </section>
+
     <!-- Bloc Recommandations IA -->
-    <section class="ai-card" style="margin-top: 16px;">
+    <section class="ai-card">
       <h2 class="ai-card-title">Recommandations IA</h2>
       <div id="predictionsContainer"></div>
     </section>
