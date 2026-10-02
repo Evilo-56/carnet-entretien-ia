@@ -87,7 +87,6 @@ def update_predictions(cursor, vehicle_id: int, current_km: int):
             next_km = last_km + rules["intervalle"]
             remaining_km = next_km - current_km
         else:
-            # Sans facture passée : projection sur le cycle théorique constructeur
             modulo = current_km % rules["intervalle"]
             remaining_km = rules["intervalle"] - modulo if modulo != 0 else rules["intervalle"]
             next_km = current_km + remaining_km
@@ -255,8 +254,9 @@ def get_vehicle_dashboard(vehicle_id: int):
     """, (vehicle_id,))
     predictions = [dict(row) for row in cursor.fetchall()]
 
+    # Récupération de l'id pour permettre la suppression
     cursor.execute("""
-        SELECT type_operation, date_operation, kilometrage, montant_ttc 
+        SELECT id, type_operation, date_operation, kilometrage, montant_ttc 
         FROM maintenances 
         WHERE vehicle_id = ? 
         ORDER BY date_operation DESC, kilometrage DESC
@@ -302,3 +302,39 @@ def create_maintenance(maintenance: MaintenanceCreate):
     conn.close()
 
     return {"message": "Entretien enregistré et prédictions actualisées"}
+
+@app.delete("/api/maintenances/{maintenance_id}")
+def delete_maintenance(maintenance_id: int):
+    """Supprime une intervention et recalcule automatiquement les prédictions et le kilométrage."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT vehicle_id FROM maintenances WHERE id = ?", (maintenance_id,))
+    row = cursor.fetchone()
+
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Intervention introuvable")
+
+    vehicle_id = row["vehicle_id"]
+
+    # Suppression de l'intervention
+    cursor.execute("DELETE FROM maintenances WHERE id = ?", (maintenance_id,))
+
+    # Recalcul du kilométrage actuel d'après l'historique restant
+    cursor.execute("SELECT MAX(kilometrage) as max_km FROM maintenances WHERE vehicle_id = ?", (vehicle_id,))
+    max_row = cursor.fetchone()
+    if max_row and max_row["max_km"]:
+        cursor.execute("UPDATE vehicles SET kilometrage_actuel = ? WHERE id = ?", (max_row["max_km"], vehicle_id))
+
+    cursor.execute("SELECT kilometrage_actuel FROM vehicles WHERE id = ?", (vehicle_id,))
+    veh = cursor.fetchone()
+    current_km = veh["kilometrage_actuel"] if veh else 0
+
+    # Recalcul des alertes prédictives
+    update_predictions(cursor, vehicle_id, current_km)
+
+    conn.commit()
+    conn.close()
+
+    return {"message": "Intervention supprimée avec succès"}

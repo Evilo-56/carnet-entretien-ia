@@ -16,6 +16,29 @@
   }
 })();
 
+// Fonction globale de suppression d'intervention
+window.deleteMaintenance = async function(maintenanceId, vehicleId) {
+  if (!confirm("Voulez-vous vraiment supprimer cet entretien ?")) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/api/maintenances/${maintenanceId}`, {
+      method: "DELETE"
+    });
+
+    if (!response.ok) {
+      throw new Error("Erreur de suppression");
+    }
+
+    // Rechargement immédiat du tableau de bord et recalcul des indicateurs
+    loadVehicleDashboard(vehicleId);
+  } catch (error) {
+    console.error("Erreur suppression :", error);
+    alert("Impossible de supprimer cette opération.");
+  }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   // 1. Connexion (login.html)
   const loginForm = document.getElementById("loginForm");
@@ -233,7 +256,6 @@ async function loadVehicleDashboard(vehicleId = 1) {
     titleEl.textContent = `${data.vehicle.marque} ${data.vehicle.modele}`;
     subtitleEl.textContent = `${data.vehicle.kilometrage_actuel.toLocaleString("fr-FR")} km • ${data.vehicle.immatriculation}`;
 
-    // Calcul et affichage des indicateurs de synthèse (KPIs)
     const totalDepenses = data.maintenances.reduce((acc, m) => acc + (parseFloat(m.montant_ttc) || 0), 0);
     if (statBudgetEl) {
       statBudgetEl.textContent = totalDepenses.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
@@ -260,7 +282,10 @@ async function loadVehicleDashboard(vehicleId = 1) {
         
         return `
           <li class="history-item">
-            <span class="history-name">${m.type_operation}</span>
+            <div class="history-header">
+              <span class="history-name">${m.type_operation}</span>
+              <button type="button" class="btn-delete-op" onclick="deleteMaintenance(${m.id}, ${vehicleId})" title="Supprimer cette opération">✕</button>
+            </div>
             <span class="history-meta">${dateFr} à ${m.kilometrage.toLocaleString("fr-FR")} km</span>
             <span class="history-cost">${montantFr} €</span>
           </li>
