@@ -87,6 +87,11 @@ def update_predictions(cursor, vehicle_id: int, current_km: int):
                 VALUES (?, ?, ?, ?, ?)
             """, (vehicle_id, operation, next_km, texte, statut))
 
+# Modèles Pydantic pour la validation
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
 class MaintenanceCreate(BaseModel):
     vehicle_id: int
     type_operation: str
@@ -97,6 +102,27 @@ class MaintenanceCreate(BaseModel):
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "API AutoCarnet AI opérationnelle"}
+
+@app.post("/api/login")
+def login(credentials: LoginRequest):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, email 
+        FROM users 
+        WHERE email = ? AND password_hash = ?
+    """, (credentials.email, credentials.password))
+    user = cursor.fetchone()
+    conn.close()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
+
+    return {
+        "message": "Connexion réussie",
+        "user": dict(user)
+    }
 
 @app.get("/api/vehicles")
 def get_vehicles():
