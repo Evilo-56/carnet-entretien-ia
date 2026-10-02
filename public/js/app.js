@@ -111,5 +111,40 @@ async function loadVehicleDashboard(vehicleId = 1) {
 
 // Déclenchement automatique au chargement du DOM
 document.addEventListener("DOMContentLoaded", () => {
-  loadVehicleDashboard(1);
+  // Récupère l'id passé dans l'URL (ex. detail.html?id=1) ou 1 par défaut
+  const urlParams = new URLSearchParams(window.location.search);
+  const vehicleId = urlParams.get("id") || 1;
+
+  loadVehiclesList();
+  loadVehicleDashboard(vehicleId);
 });
+// Chargement dynamique de la liste des véhicules
+async function loadVehiclesList() {
+  const container = document.getElementById("vehiclesList");
+  if (!container) return;
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/vehicles");
+    if (!response.ok) throw new Error("Erreur de récupération des véhicules");
+
+    const vehicles = await response.json();
+
+    container.innerHTML = vehicles.map(v => {
+      const badgeClass = v.nb_alertes > 0 ? "badge-warning" : "badge-success";
+      const badgeText = v.nb_alertes > 0 ? `${v.nb_alertes} à surveiller` : "À jour";
+
+      return `
+        <div class="vehicle-item-card" onclick="window.location.href='detail.html?id=${v.id}'" style="cursor: pointer;">
+          <div class="vehicle-info">
+            <strong class="vehicle-title">${v.marque} ${v.modele}</strong>
+            <p class="vehicle-meta">${v.kilometrage_actuel.toLocaleString("fr-FR")} km • ${v.immatriculation}</p>
+          </div>
+          <span class="badge ${badgeClass}">${badgeText}</span>
+        </div>
+      `;
+    }).join("");
+  } catch (error) {
+    console.error("Erreur API véhicules :", error);
+    container.innerHTML = "<p>Erreur de chargement des données.</p>";
+  }
+}

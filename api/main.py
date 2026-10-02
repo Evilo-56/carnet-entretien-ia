@@ -98,6 +98,19 @@ class MaintenanceCreate(BaseModel):
 def read_root():
     return {"status": "ok", "message": "API AutoCarnet AI opérationnelle"}
 
+@app.get("/api/vehicles")
+def get_vehicles():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT v.*, 
+               (SELECT COUNT(*) FROM predictions p WHERE p.vehicle_id = v.id AND p.statut = 'À surveiller') AS nb_alertes
+        FROM vehicles v
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
 @app.get("/api/vehicles/{vehicle_id}/dashboard")
 def get_vehicle_dashboard(vehicle_id: int):
     conn = get_db_connection()

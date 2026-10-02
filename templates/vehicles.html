@@ -8,31 +8,15 @@
 </head>
 <body class="mobile-container">
   <main class="app-card">
-    <header class="app-header">
+    <header class="detail-header">
       <h1 class="page-title">Mes véhicules</h1>
-      <a href="login.html" class="logout-link">Déconnexion</a>
     </header>
 
-    <!-- Carte Véhicule (cliquable vers le détail) -->
-    <a href="detail.html" class="vehicle-card-link">
-      <section class="vehicle-card">
-        <div class="vehicle-info">
-          <h2 class="vehicle-title">Citroën C4 Picasso</h2>
-          <p class="vehicle-subtitle">1.5 BlueHDi • FG-660-DT</p>
-        </div>
-        
-        <div class="vehicle-status-row">
-          <span class="vehicle-mileage">162 000 km</span>
-          <span class="badge badge-success">À jour</span>
-        </div>
-      </section>
-    </a>
-
-    <!-- Actions -->
-    <div class="actions-group">
-      <a href="add-maintenance.html" class="btn btn-primary">+ Ajouter un entretien</a>
-      <button type="button" class="btn btn-secondary">+ Enregistrer un autre véhicule</button>
+    <div class="vehicles-list" id="vehiclesList">
+      <p class="history-meta">Chargement des véhicules…</p>
     </div>
   </main>
+
+  <script src="../public/js/app.js"></script>
 </body>
 </html>
