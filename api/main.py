@@ -8,8 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 app = FastAPI(
-    title="AutoCarnet AI API",
-    description="API de suivi d'entretien automobile et prédictions de maintenance",
+    title="AutoCarnet AI",
     version="1.0.0"
 )
 
@@ -20,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DATABASE_NAME = "carnet_entretien.db"
+DB_PATH = "carnet_entretien.db"
 
 MAINTENANCE_INTERVALS = {
     "Vidange & filtre à huile": {
@@ -41,30 +40,14 @@ MAINTENANCE_INTERVALS = {
 }
 
 MOCK_INVOICE_TEMPLATES = [
-    {
-        "type_operation": "Vidange moteur + filtre",
-        "montant_ttc": 195.50,
-        "km_delta": 3000
-    },
-    {
-        "type_operation": "Disques et plaquettes AV",
-        "montant_ttc": 340.00,
-        "km_delta": 4500
-    },
-    {
-        "type_operation": "Courroie de distribution",
-        "montant_ttc": 680.00,
-        "km_delta": 5000
-    },
-    {
-        "type_operation": "Purge liquide de frein",
-        "montant_ttc": 85.00,
-        "km_delta": 1500
-    }
+    {"type_operation": "Vidange moteur + filtre", "montant_ttc": 195.50, "km_delta": 3000},
+    {"type_operation": "Disques et plaquettes AV", "montant_ttc": 340.00, "km_delta": 4500},
+    {"type_operation": "Courroie de distribution", "montant_ttc": 680.00, "km_delta": 5000},
+    {"type_operation": "Purge liquide de frein", "montant_ttc": 85.00, "km_delta": 1500}
 ]
 
-def get_db_connection():
-    conn = sqlite3.connect(DATABASE_NAME)
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -87,6 +70,7 @@ def update_predictions(cursor, vehicle_id: int, current_km: int):
             next_km = last_km + rules["intervalle"]
             remaining_km = next_km - current_km
         else:
+            # Cycle theorique si aucun historique en base
             modulo = current_km % rules["intervalle"]
             remaining_km = rules["intervalle"] - modulo if modulo != 0 else rules["intervalle"]
             next_km = current_km + remaining_km
@@ -136,26 +120,26 @@ class MaintenanceCreate(BaseModel):
     montant_ttc: float
 
 @app.get("/")
-def read_root():
-    return {"status": "ok", "message": "API AutoCarnet AI opérationnelle"}
+def root():
+    return {"status": "ok"}
 
 @app.post("/api/scan-invoice")
 async def scan_invoice(file: UploadFile = File(...)):
     await file.read()
 
-    conn = get_db_connection()
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT kilometrage_actuel FROM vehicles WHERE id = 1")
     row = cursor.fetchone()
     current_km = row["kilometrage_actuel"] if row else 162000
     conn.close()
 
-    filename_lower = file.filename.lower()
-    if "vidange" in filename_lower:
+    filename = file.filename.lower()
+    if "vidange" in filename:
         template = MOCK_INVOICE_TEMPLATES[0]
-    elif "frein" in filename_lower or "plaquette" in filename_lower:
+    elif "frein" in filename or "plaquette" in filename:
         template = MOCK_INVOICE_TEMPLATES[1]
-    elif "distribution" in filename_lower or "courroie" in filename_lower:
+    elif "distribution" in filename or "courroie" in filename:
         template = MOCK_INVOICE_TEMPLATES[2]
     else:
         template = random.choice(MOCK_INVOICE_TEMPLATES)
@@ -173,9 +157,8 @@ async def scan_invoice(file: UploadFile = File(...)):
 
 @app.post("/api/login")
 def login(credentials: LoginRequest):
-    conn = get_db_connection()
+    conn = get_db()
     cursor = conn.cursor()
-
     cursor.execute("""
         SELECT id, email 
         FROM users 
@@ -185,16 +168,13 @@ def login(credentials: LoginRequest):
     conn.close()
 
     if not user:
-        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
+        raise HTTPException(status_code=401, detail="Identifiants invalides")
 
-    return {
-        "message": "Connexion réussie",
-        "user": dict(user)
-    }
+    return {"message": "ok", "user": dict(user)}
 
 @app.get("/api/vehicles")
 def get_vehicles():
-    conn = get_db_connection()
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
         SELECT v.*, 
@@ -208,7 +188,7 @@ def get_vehicles():
 
 @app.post("/api/vehicles", status_code=201)
 def create_vehicle(vehicle: VehicleCreate):
-    conn = get_db_connection()
+    conn = get_db()
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -222,26 +202,23 @@ def create_vehicle(vehicle: VehicleCreate):
         vehicle.immatriculation.strip().upper(),
         vehicle.kilometrage_actuel
     ))
-    new_vehicle_id = cursor.lastrowid
-
-    update_predictions(cursor, new_vehicle_id, vehicle.kilometrage_actuel)
+    vehicle_id = cursor.lastrowid
+    update_predictions(cursor, vehicle_id, vehicle.kilometrage_actuel)
 
     conn.commit()
     conn.close()
-
-    return {"message": "Véhicule créé avec succès", "id": new_vehicle_id}
+    return {"message": "Véhicule créé", "id": vehicle_id}
 
 @app.get("/api/vehicles/{vehicle_id}/dashboard")
 def get_vehicle_dashboard(vehicle_id: int):
-    conn = get_db_connection()
+    conn = get_db()
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM vehicles WHERE id = ?", (vehicle_id,))
     vehicle = cursor.fetchone()
-
     if not vehicle:
         conn.close()
-        raise HTTPException(status_code=404, detail="Véhicule introuvable")
+        raise HTTPException(status_code=404, detail="Véhicule non trouvé")
 
     update_predictions(cursor, vehicle_id, vehicle["kilometrage_actuel"])
     conn.commit()
@@ -254,7 +231,6 @@ def get_vehicle_dashboard(vehicle_id: int):
     """, (vehicle_id,))
     predictions = [dict(row) for row in cursor.fetchall()]
 
-    # Récupération de l'id pour permettre la suppression
     cursor.execute("""
         SELECT id, type_operation, date_operation, kilometrage, montant_ttc 
         FROM maintenances 
@@ -264,7 +240,6 @@ def get_vehicle_dashboard(vehicle_id: int):
     maintenances = [dict(row) for row in cursor.fetchall()]
 
     conn.close()
-
     return {
         "vehicle": dict(vehicle),
         "predictions": predictions,
@@ -273,7 +248,7 @@ def get_vehicle_dashboard(vehicle_id: int):
 
 @app.post("/api/maintenances", status_code=201)
 def create_maintenance(maintenance: MaintenanceCreate):
-    conn = get_db_connection()
+    conn = get_db()
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -300,28 +275,22 @@ def create_maintenance(maintenance: MaintenanceCreate):
 
     conn.commit()
     conn.close()
-
-    return {"message": "Entretien enregistré et prédictions actualisées"}
+    return {"message": "Entretien ajouté"}
 
 @app.delete("/api/maintenances/{maintenance_id}")
 def delete_maintenance(maintenance_id: int):
-    """Supprime une intervention et recalcule automatiquement les prédictions et le kilométrage."""
-    conn = get_db_connection()
+    conn = get_db()
     cursor = conn.cursor()
 
     cursor.execute("SELECT vehicle_id FROM maintenances WHERE id = ?", (maintenance_id,))
     row = cursor.fetchone()
-
     if not row:
         conn.close()
-        raise HTTPException(status_code=404, detail="Intervention introuvable")
+        raise HTTPException(status_code=404, detail="Opération non trouvée")
 
     vehicle_id = row["vehicle_id"]
-
-    # Suppression de l'intervention
     cursor.execute("DELETE FROM maintenances WHERE id = ?", (maintenance_id,))
 
-    # Recalcul du kilométrage actuel d'après l'historique restant
     cursor.execute("SELECT MAX(kilometrage) as max_km FROM maintenances WHERE vehicle_id = ?", (vehicle_id,))
     max_row = cursor.fetchone()
     if max_row and max_row["max_km"]:
@@ -331,10 +300,8 @@ def delete_maintenance(maintenance_id: int):
     veh = cursor.fetchone()
     current_km = veh["kilometrage_actuel"] if veh else 0
 
-    # Recalcul des alertes prédictives
     update_predictions(cursor, vehicle_id, current_km)
 
     conn.commit()
     conn.close()
-
-    return {"message": "Intervention supprimée avec succès"}
+    return {"message": "Supprimé"}
